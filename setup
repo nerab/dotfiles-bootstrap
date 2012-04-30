@@ -27,25 +27,16 @@ REPO_DIR=test/dotfiles.git # e.g. "$WORK_DIR.git"
 # Poor man's GNU readlink
 canonical_path(){ 
 	(
-	  cd $1
+  	cd $1
 		pwd
 	)
 }
 
+mkdir -p "$WORK_DIR" "$TARGET_DIR" "$REPO_DIR"
+
 WORK_DIR=$(canonical_path "$WORK_DIR")
 TARGET_DIR=$(canonical_path "$TARGET_DIR")
 REPO_DIR=$(canonical_path "$REPO_DIR")
-
-# Safety belt - refuse to work in existing directories
-for dir in "$WORK_DIR" "$TARGET_DIR" "$REPO_DIR"
-do
-  if [[ -d  $dir ]]; then
-    echo Error: "$dir" already exists.
-    exit 1
-  fi
-done
-
-mkdir -p "$WORK_DIR" "$TARGET_DIR" "$REPO_DIR"
 
 # Setup the repo
 (
