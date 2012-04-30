@@ -24,17 +24,17 @@ REPO_DIR=test/dotfiles.git # e.g. "$WORK_DIR.git"
 # No need to change anything beyond this line.
 #
 
-# Test for readlink or greadlink
-type -t readlink >/dev/null
+# Poor man's GNU readlink
+canonical_path(){ 
+	(
+	  cd $1
+		pwd
+	)
+}
 
-if [[ $? -ne 0 ]]; then
-  echo "readlink not present. Install it e.g. with 'brew install coreutils'" 1>&2
-  exit $?
-fi
-
-WORK_DIR=$(readlink -m "$WORK_DIR")
-TARGET_DIR=$(readlink -m "$TARGET_DIR")
-REPO_DIR=$(readlink -m "$REPO_DIR")
+WORK_DIR=$(canonical_path "$WORK_DIR")
+TARGET_DIR=$(canonical_path "$TARGET_DIR")
+REPO_DIR=$(canonical_path "$REPO_DIR")
 
 # Safety belt - refuse to work in existing directories
 for dir in "$WORK_DIR" "$TARGET_DIR" "$REPO_DIR"
