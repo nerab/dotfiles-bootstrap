@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Test script for setup
+#
+TEST_DIR=test
+
+# Cleanup. Disable this line in order to inspect the test output.
+trap "rm -rf '$TEST_DIR'" EXIT
+
+WORK_DIR="$TEST_DIR"/dotfiles
+TARGET_DIR="$TEST_DIR"
+REPO_DIR="$TEST_DIR"/dotfiles.git
+
+./setup
+
+# create some stuff in $WORK_DIR and push it to the repo
+(
+  cd "$WORK_DIR"
+
+  # Create a .bashrc
+  echo > .bashrc <<HERE
+# created by dotfiles-bootstrap
+HERE
+
+  # Create a bin script
+  mkdir bin
+  echo bar > bin/foo
+  git add .
+  git commit -m "Initial test version"
+  git push
+)
+
+# Verify that what we just pushed made it to $TARGET_DIR
+(
+  cd "$TARGET_DIR"
+  test_count=0
+
+  for test_file in bin/foo .bashrc
+  do
+    if [[ ! -s "$test_file" ]]; then
+      echo Error: Expected \'"$test_file"\' to exist and to be non-empty, but could not read it.
+      exit 1
+    fi
+
+    ((test_count += 1))
+  done
+
+  echo "$test_count" tests were successfully run.
+)

@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Define directories. Modify these to match your setup.
+
+#
+# Directory that will be your working copy. New dotfiles start their life there.
+#
+WORK_DIR=test/dotfiles # e.g. $HOME/Projects/dotfiles
+
+#
+# Directory where your version-controlled dotfiles will end up. In most cases
+# this will be $HOME, except for tests.
+#
+TARGET_DIR=test # e.g. $HOME
+
+#
+# Directory that holds the git repo. Whenever you push to it, all of the files
+# in the repo are being extracted to the $TARGET_DIR.
+#
+REPO_DIR=test/dotfiles.git # e.g. "$WORK_DIR.git"
+
+#
+# Let's go.
+# No need to change anything beyond this line.
+#
+
+# Test for readlink or greadlink
+type -t readlink >/dev/null
+
+if [[ $? -ne 0 ]]; then
+  echo "readlink not present. Install it e.g. with 'brew install coreutils'" 1>&2
+  exit $?
+fi
+
+WORK_DIR=$(readlink -m "$WORK_DIR")
+TARGET_DIR=$(readlink -m "$TARGET_DIR")
+REPO_DIR=$(readlink -m "$REPO_DIR")
+
+# Safety belt - refuse to work in existing directories
+for dir in "$WORK_DIR" "$TARGET_DIR" "$REPO_DIR"
+do
+  if [[ -d  $dir ]]; then
+    echo Error: "$dir" already exists.
+    exit 1
+  fi
+done
+
+mkdir -p "$WORK_DIR" "$TARGET_DIR" "$REPO_DIR"
+
+# Setup the repo
+(
+  cd "$REPO_DIR"
+  git init --bare
+  git config core.bare false
+  git config core.worktree "$WORK_DIR"
+  git config receive.denycurrentbranch ignore
+  echo "GIT_WORK_TREE="$TARGET_DIR" git checkout -f" > hooks/post-receive
+  chmod u+x hooks/post-receive
+)
+
+# Setup a work dir
+(
+  cd "$WORK_DIR"
+  touch .gitignore
+  git init .
+  git remote add origin "$REPO_DIR"
+  git add .
+  git commit -m "Initial version"
+  git push origin master
+)
+
+echo Done. All commits to the Git repo in "$REPO_DIR" will now be checked out to "$TARGET_DIR" automatically when pushed. Start working in "$WORK_DIR".
